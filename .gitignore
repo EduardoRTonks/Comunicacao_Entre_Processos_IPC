@@ -1,22 +1,17 @@
-Ambiente virtual do Python
 meu_ambiente/
 
-Pasta de compilação do CMake
-build/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-Arquivos de log e temporários
-*.log
-*.tmp
-*.temp
+# Ambientes Virtuais
+venv/
+env/
+.venv/
+.env/
 
-Arquivos específicos de Sistema Operacional
-.DS_Store
-Thumbs.db
-
-Arquivos de IDEs e editores populares
+# Arquivos de IDEs
 .vscode/
 .idea/
-*.suo
-*.user
-*.swp
-*.swo
