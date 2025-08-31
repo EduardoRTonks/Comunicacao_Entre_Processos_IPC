@@ -127,3 +127,7 @@ Aluno B (Sockets): Implementar a lógica cliente-servidor em backend/sockets.
 Aluno C (Memória Compartilhada): Implementar a lógica de acesso e sincronização (com semáforos/mutex) em backend/shared_memory.
 
 Aluno D (Frontend): Desenvolver os arquivos em frontend/ e implementar a lógica em script.js para chamar os executáveis do backend e processar a saída JSON.
+
+
+sudo apt-get update
+sudo apt install python3.13-tk -y
