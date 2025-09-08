@@ -37,8 +37,7 @@ Ao forçar o encerramento de um processo com o botão "Parar", a chamada `termin
 
 **Evidência:**
 
-![Screenshot do erro de interrupção manual](image/erro_interrupcao.png)
-*(Nota: Substitua `test/erro_interrupcao.png` pelo caminho correto da sua imagem)*
+![Screenshot do erro de interrupção manual](images/erro_interrupcao.png)
 
 ### P-02: Falha na Reexecução do Módulo Sockets (TC-05)
 
@@ -46,8 +45,7 @@ Após a primeira execução do módulo Sockets, o sistema operacional mantém a 
 
 **Evidência:**
 
-![Screenshot do erro de reuso de endereço no Socket](image/erro_socket_reuso.png)
-*(Nota: Substitua `test/erro_socket_reuso.png` pelo caminho correto da sua imagem)*
+![Screenshot do erro de reuso de endereço no Socket](images/erro_socket_reuso.png)
 
 ## 5. Recomendações e Próximos Passos
 
