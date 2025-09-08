@@ -33,6 +33,7 @@ def processo_servidor():
 
     # Cria um objeto socket. AF_INET é para IPv4, SOCK_STREAM é para TCP.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # Associa o socket ao endereço (host) e à porta definidos.
         s.bind((HOST, PORT))
         # Coloca o socket em modo de escuta, aguardando conexões.
