@@ -41,6 +41,8 @@ class App:
         self.root.after(100, self.process_log_queue)
         # Define uma função a ser chamada quando o usuário clica no 'X' para fechar a janela.
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.is_terminating_manually = False  # Flag para indicar encerramento manual
+
 
     # Método para criar os componentes visuais (widgets) da interface.
     def _create_widgets(self):
@@ -132,6 +134,9 @@ class App:
     # Método chamado quando o botão "Iniciar" é clicado.
     def start_process(self):
         """Inicia o processo backend com base nas seleções do usuário."""
+        
+        self.is_terminating_manually = False 
+
         # Limpa o conteúdo das duas áreas de log.
         self.log_area_1.delete('1.0', tk.END)
         self.log_area_2.delete('1.0', tk.END)
@@ -183,6 +188,7 @@ class App:
         """Para o processo backend em execução."""
         # Verifica se existe um processo e se ele ainda está rodando.
         if self.process and self.process.poll() is None:
+            self.is_terminating_manually = True
             # Envia um sinal para o processo terminar de forma "amigável".
             self.process.terminate()
             # Adiciona uma mensagem na área de log informando que o processo foi parado.
@@ -255,7 +261,8 @@ class App:
                 # Se a linha não for um JSON válido, um erro ocorrerá.
                 except json.JSONDecodeError:
                     # Neste caso, apenas exibe a linha como texto bruto na primeira área.
-                    self.log_area_1.insert(tk.END, f"[LOG BRUTO]: {line}")
+                    if not self.is_terminating_manually:
+                        self.log_area_1.insert(tk.END, f"[LOG BRUTO]: {line}")
         # Se a fila estiver vazia, o 'get_nowait' gera este erro.
         except queue.Empty:
             pass  # Não faz nada, o que é o comportamento esperado.
