@@ -37,7 +37,7 @@ Ao forçar o encerramento de um processo com o botão "Parar", a chamada `termin
 
 **Evidência:**
 
-![Screenshot do erro de interrupção manual](images/erro_interrupcao.png)
+![Screenshot do erro de interrupção manual](images/erro_interrupcao.jpeg)
 
 ### P-02: Falha na Reexecução do Módulo Sockets (TC-05)
 
