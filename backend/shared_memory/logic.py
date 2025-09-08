@@ -1,9 +1,3 @@
-# -----------------------------------------------------------------------------
-# ARQUIVO: backend/shared_memory/logic.py
-# DESCRIÇÃO: Lógica de comunicação entre dois processos usando Memória
-#            Compartilhada e um Evento para sincronização.
-# -----------------------------------------------------------------------------
-
 import multiprocessing as mp  # Importa a biblioteca para criar e gerenciar processos.
 import json  # Importa a biblioteca para formatar os logs em JSON.
 import sys  # Importa a biblioteca para ler argumentos da linha de comando.
@@ -35,7 +29,7 @@ def processo_escritor(shared_mem, sync_event, msg):
     # Codifica a mensagem (string) para bytes, no formato utf-8.
     msg_bytes = msg.encode('utf-8')
     # Loga a mensagem que será escrita na memória.
-    log_message(source_id, f"Escrevendo '{msg}' na memória compartilhada.")
+    log_message(source_id, f"PID: {pid} -> Escrevendo '{msg}' na memória compartilhada.")
     
     # Escreve os bytes da mensagem na memória compartilhada.
     # O slice [:] garante que estamos modificando o conteúdo do array.
@@ -44,7 +38,7 @@ def processo_escritor(shared_mem, sync_event, msg):
     # Adiciona uma pausa.
     time.sleep(1)
     # Loga que vai sinalizar ao outro processo que a escrita terminou.
-    log_message(source_id, "Escrita finalizada. Sinalizando o processo leitor.")
+    log_message(source_id, f"PID: {pid} -> Escrita finalizada. Sinalizando o processo leitor.")
     # Ativa o evento. Isso vai "acordar" o processo leitor que está esperando.
     sync_event.set()
 
@@ -56,21 +50,21 @@ def processo_leitor(shared_mem, sync_event):
     source_id = f"PROCESSO LEITOR (PID: {pid})"
 
     # Loga que o processo iniciou e está esperando pelo sinal.
-    log_message(source_id, "Iniciado. Aguardando sinal do escritor...")
+    log_message(source_id, f"PID: {pid} -> Iniciado. Aguardando sinal do escritor...")
     # Fica bloqueado aqui até que o evento 'sync_event' seja ativado pelo escritor.
     sync_event.wait()
     
     # Loga que o sinal foi recebido e que vai ler a memória.
-    log_message(source_id, "Sinal recebido! Lendo da memória compartilhada.")
+    log_message(source_id, "PID: {pid} -> Sinal recebido! Lendo da memória compartilhada.")
     
     # Lê os bytes da memória compartilhada e os decodifica de volta para uma string.
     # O '.rstrip(b'\\x00')' remove os bytes nulos do final.
     mensagem_lida = shared_mem[:].rstrip(b'\x00').decode('utf-8')
     
     # Loga a mensagem que foi lida.
-    log_message(source_id, f"Leu da memória: '{mensagem_lida}'")
+    log_message(source_id, f"PID: {pid} -> Leu da memória: '{mensagem_lida}'")
     # Loga que o processo está encerrando.
-    log_message(source_id, "Encerrando.")
+    log_message(source_id, f"PID: {pid} -> Encerrando.")
 
 # Ponto de entrada do script.
 if __name__ == "__main__":

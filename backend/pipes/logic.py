@@ -12,6 +12,8 @@ import time  # Importa a biblioteca de tempo para adicionar pequenas pausas.
 # Função para criar e imprimir logs no formato JSON esperado pela GUI.
 def log_message(source, message):
     # Cria um dicionário (estrutura de dados) para o log.
+    pid = os.getpid()
+
     log_entry = {
         "source": source,  # A origem da mensagem (ex: "PROCESSO PAI").
         "payload": {"message": message}  # O conteúdo da mensagem.
@@ -28,12 +30,12 @@ def processo_filho(conn):
     source_id = f"PROCESSO FILHO (PID: {pid})"
     
     # Loga que o processo foi iniciado.
-    log_message(source_id, "Iniciado e aguardando mensagem do pai.")
-    
+    log_message(source_id, f"PID: {pid} -> Iniciado e aguardando mensagem do pai.")
+
     # Fica bloqueado aqui até receber uma mensagem do pai através do pipe 'conn'.
     mensagem = conn.recv()
     # Loga a mensagem que foi recebida.
-    log_message(source_id, f"Recebeu: '{mensagem}'")
+    log_message(source_id, f"PID: {pid} -> Recebeu: '{mensagem}'")
     
     # Adiciona uma pequena pausa para visualização.
     time.sleep(1)
@@ -41,14 +43,14 @@ def processo_filho(conn):
     # Prepara uma resposta para o pai.
     resposta = f"Obrigado pela mensagem, pai!"
     # Loga que está enviando a resposta.
-    log_message(source_id, f"Enviando resposta: '{resposta}'")
+    log_message(source_id, f"PID: {pid} -> Enviando resposta: '{resposta}'")
     # Envia a resposta para o pai através do pipe.
     conn.send(resposta)
     
     # Fecha sua ponta da conexão do pipe.
     conn.close()
     # Loga que o processo está terminando.
-    log_message(source_id, "Conexão fechada. Encerrando.")
+    log_message(source_id, f"PID: {pid} -> Conexão fechada. Encerrando.")
 
 # Ponto de entrada do script.
 if __name__ == "__main__":
@@ -62,8 +64,8 @@ if __name__ == "__main__":
     source_id_pai = f"PROCESSO PAI (PID: {pid_pai})"
     
     # Loga o início da operação.
-    log_message(source_id_pai, "Iniciando demonstração com Pipes.")
-    
+    log_message(source_id_pai, f"PID: {pid_pai} -> Iniciando demonstração com Pipes.")
+
     # Cria um Pipe. Isso retorna duas pontas de conexão: uma para o pai, outra para o filho.
     conn_pai, conn_filho = mp.Pipe()
     
@@ -81,21 +83,21 @@ if __name__ == "__main__":
     time.sleep(1)
     
     # Loga a mensagem que será enviada.
-    log_message(source_id_pai, f"Enviando mensagem: '{mensagem_da_gui}'")
+    log_message(source_id_pai, f"PID: {pid_pai} -> Enviando mensagem: '{mensagem_da_gui}'")
     # Envia a mensagem da GUI para o filho através da sua ponta do pipe.
     conn_pai.send(mensagem_da_gui)
     
     # Loga que está aguardando a resposta.
-    log_message(source_id_pai, "Aguardando resposta do filho...")
+    log_message(source_id_pai, f"PID: {pid_pai} -> Aguardando resposta do filho...")
     # Fica bloqueado aqui até receber a resposta do filho.
     resposta_filho = conn_pai.recv()
     # Loga a resposta recebida.
-    log_message(source_id_pai, f"Recebeu a resposta: '{resposta_filho}'")
-    
+    log_message(source_id_pai, f"PID: {pid_pai} -> Recebeu a resposta: '{resposta_filho}'")
+
     # Espera até que o processo filho termine sua execução.
     p_filho.join()
     
     # Fecha a ponta do pipe do pai.
     conn_pai.close()
     # Loga o fim da demonstração.
-    log_message(source_id_pai, "Demonstração com Pipes finalizada.")
+    log_message(source_id_pai, f"PID: {pid_pai} -> Demonstração com Pipes finalizada.")

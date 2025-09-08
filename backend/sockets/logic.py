@@ -80,24 +80,24 @@ def processo_cliente(msg):
     # Cria um objeto socket, igual ao do servidor.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         # Loga que está tentando se conectar ao servidor.
-        log_message(source_id, f"PID: {pid} ->Conectando a {HOST}:{PORT}...")
+        log_message(source_id, f"PID: {pid} -> Conectando a {HOST}:{PORT}...")
         # Tenta se conectar ao servidor no endereço e porta especificados.
         s.connect((HOST, PORT))
         # Loga que a conexão foi bem-sucedida.
-        log_message(source_id, "Conexão estabelecida.")
+        log_message(source_id, f"PID: {pid} -> Conexão estabelecida.")
 
         # Loga a mensagem que será enviada.
-        log_message(source_id, f"Enviando mensagem: '{msg}'")
+        log_message(source_id, f"PID: {pid} -> Enviando mensagem: '{msg}'")
         # Envia a mensagem (recebida da GUI), codificando-a para bytes.
         s.sendall(msg.encode('utf-8'))
 
         # Espera pela resposta do servidor (até 1024 bytes).
         resposta_data = s.recv(1024)
         # Loga a resposta recebida, decodificando-a de volta para string.
-        log_message(source_id, f"Resposta recebida: '{resposta_data.decode('utf-8')}'")
+        log_message(source_id, f"PID: {pid} -> Resposta recebida: '{resposta_data.decode('utf-8')}'")
         
     # Loga que o cliente está encerrando.
-    log_message(source_id, "Encerrado.")
+    log_message(source_id, f"PID: {pid} -> Encerrado.")
 
 
 # Ponto de entrada do script.
