@@ -184,40 +184,40 @@ class App:
 
     # Método chamado quando o botão "Parar" é clicado.
     def stop_process(self):
-        """Para o processo backend e suas threads de log de forma síncrona e segura."""
+        """Para o processo backend e sinaliza para a GUI parar de imprimir logs."""
+        # 1. ATIVA O MODO DE PARADA IMEDIATAMENTE.
+        # A partir deste ponto, process_log_queue vai ignorar logs do backend.
         self.stopping = True
-        # Verifica se existe um processo e se ele ainda está rodando.
+
+        # 2. LIMPA A FILA de logs que podem ter chegado antes da flag ser checada.
+        while not self.log_queue.empty():
+            try:
+                self.log_queue.get_nowait()
+            except queue.Empty:
+                break
+
+        # 3. TERMINA O PROCESSO E AS THREADS DE LEITURA (boa prática)
         if self.process and self.process.poll() is None:
             try:
-                # Envia um sinal para o processo terminar de forma "amigável".
                 self.process.terminate()
                 self.process.wait(timeout=1.0)
             except subprocess.TimeoutExpired:
-                # Força o encerramento do processo caso demore mais que 1 segundo
                 self.process.kill()
                 self.process.wait()
-            # Checa se as threads de leitura do out e do error estão ativas e faz
-            # elas pararem
+            
             if self.stdout_thread and self.stdout_thread.is_alive():
                 self.stdout_thread.join(timeout=0.5)
             if self.stderr_thread and self.stderr_thread.is_alive():
                 self.stderr_thread.join(timeout=0.5)
-
-            # Limpa qualquer log residual que possa ter sido capturado
-            # durante o processo de encerramento.
-            while not self.log_queue.empty():
-                try:
-                    self.log_queue.get_nowait()
-                except queue.Empty:
-                    break
-
             self.process = None
-        # Adiciona uma mensagem na área de log informando que o processo foi parado.
+
+        # 4. ENVIA A MENSAGEM FINAL, que será a única permitida pelo filtro.
+        # Usamos 'App' como 'source' para que o filtro a reconheça.
         log_msg = {"source": "App", "payload": {"message": "Processo finalizado pelo usuário."}}
         self.log_queue.put(json.dumps(log_msg) + '\n')
-        # Habilita o botão "Iniciar" novamente.
+
+        # 5. ATUALIZA A INTERFACE
         self.start_button.config(state=tk.NORMAL)
-        # Desabilita o botão "Parar".
         self.stop_button.config(state=tk.DISABLED)
 
     # Método executado pelas threads para ler a saída do processo de backend.
@@ -235,69 +235,56 @@ class App:
     # Método que é executado repetidamente para exibir os logs na tela.
     def process_log_queue(self):
         """Processa as mensagens da fila e as exibe nas áreas de log corretas."""
-        # Tenta executar o código abaixo.
         try:
-            # Loop infinito para esvaziar a fila de logs.
             while True:
-                # Pega um item da fila sem bloquear. Se a fila estiver vazia, gera um erro 'queue.Empty'.
                 line = self.log_queue.get_nowait()
-                # Tenta decodificar a linha como um JSON.
                 try:
-                    # Converte a string JSON em um objeto Python (dicionário).
                     log_entry = json.loads(line)
-                    # Pega a origem da mensagem (ex: "SERVIDOR").
+
+                    # --- NOVA LÓGICA DE FILTRAGEM ---
+                    # Se estamos no processo de parada E a mensagem NÃO é da nossa GUI,
+                    # simplesmente descarte-a e pule para a próxima da fila.
+                    if self.stopping and log_entry.get('source') != 'App':
+                        continue # Ignora o log e continua o loop
+
+                    # O código abaixo só será executado para logs do backend (se não estiver parando)
+                    # ou para a nossa mensagem final "App".
                     source = log_entry.get('source', 'Desconhecido')
-                    # Pega o conteúdo da mensagem.
                     payload = log_entry.get('payload', {})
-                    # Pega a mensagem específica de dentro do payload.
                     message = payload.get('message', '')
-                    # Formata o log para exibição.
                     formatted_log = f"-> {message}\n"
 
-                    # Pega o método de IPC atualmente selecionado.
                     ipc_method = self.ipc_method_var.get()
-                    # Pega os rótulos correspondentes a esse método.
                     labels = self.IPC_CONFIG[ipc_method]["labels"]
 
-                    # Verifica se a origem do log corresponde ao primeiro rótulo (ex: "SERVIDOR").
                     if labels[0].upper() in source.upper():
-                        # Se sim, insere o log na primeira área de texto.
                         self.log_area_1.insert(tk.END, formatted_log)
-                        # Rola a área de texto para mostrar a última mensagem.
                         self.log_area_1.see(tk.END)
-                    # Senão, verifica se corresponde ao segundo rótulo (ex: "CLIENTE").
                     elif labels[1].upper() in source.upper():
-                        # Se sim, insere o log na segunda área de texto.
                         self.log_area_2.insert(tk.END, formatted_log)
-                        # Rola a área de texto para mostrar a última mensagem.
                         self.log_area_2.see(tk.END)
-                    # Se não corresponder a nenhum dos dois.
                     else:
-                        # Insere na primeira área como um log geral do sistema.
+                        # Trata a mensagem da "App" e outras fontes desconhecidas
                         self.log_area_1.insert(tk.END, f"[{source.upper()}]: {message}\n")
                         self.log_area_1.see(tk.END)
 
-                # Se a linha não for um JSON válido, um erro ocorrerá.
                 except json.JSONDecodeError:
-                    # Neste caso, apenas exibe a linha como texto bruto na primeira área.
+                    # Se não for um JSON válido e não estivermos parando, exibe como log bruto.
                     if not self.stopping:
                         self.log_area_1.insert(tk.END, f"[LOG BRUTO]: {line}")
-        # Se a fila estiver vazia, o 'get_nowait' gera este erro.
+
         except queue.Empty:
-            pass  # Não faz nada, o que é o comportamento esperado.
+            pass  # Fila vazia, comportamento normal.
 
-        # Verifica se o processo de backend já terminou por conta própria.
+        # Lógica para reativar o botão Iniciar quando o processo termina sozinho
         if self.process and self.process.poll() is not None:
-            # Se terminou, reabilita o botão "Iniciar".
-            self.start_button.config(state=tk.NORMAL)
-            # E desabilita o botão "Parar".
-            self.stop_button.config(state=tk.DISABLED)
-            # Define a variável do processo como nula, pois ele não existe mais.
-            self.process = None
+            if not self.stopping: # Só reativa se não foi o usuário que parou
+                self.start_button.config(state=tk.NORMAL)
+                self.stop_button.config(state=tk.DISABLED)
+                self.process = None
 
-        # Agenda a próxima verificação da fila para daqui a 100 milissegundos.
         self.root.after(100, self.process_log_queue)
-
+        
     # Método chamado quando a janela é fechada.
     def on_close(self):
         """Função chamada ao fechar a janela."""

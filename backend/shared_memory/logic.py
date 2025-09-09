@@ -35,6 +35,7 @@ def processo_escritor(shared_mem, sync_event, msg):
         log_message(source_id,
                     f"ERRO: A mensagem ({len(msg_bytes)} bytes) excede o tamanho do buffer ({buffer_size} bytes).")
         log_message(source_id, "Processo encerrado devido a erro.")
+
         # Ativa o evento mesmo em caso de erro para que o processo leitor não fique esperando para sempre.
         sync_event.set()
         return  # Encerra a função e o processo de forma limpa, evitando o crash.

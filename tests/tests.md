@@ -56,26 +56,27 @@ O script `logic.py` do shared_memory cria um buffer de memória compartilhada de
 
 **Evidência:**
 ![Screenshot da falha de buffer em Shared Memory](images/erro_buffer_sharedmemory.png)
+
 ### P-04: Logs do Backend Aparecem Após o Cancelamento (TC-07, TC-08)
 
 Este problema é uma **condição de corrida**. A função `stop_process` na GUI envia o sinal `terminate()` e imediatamente exibe a mensagem de finalização. No entanto, o processo backend não para instantaneamente. Nesse intervalo, ele pode executar mais algumas linhas de código e enviar logs, que chegam à GUI *após* ela já ter declarado o processo como finalizado.
 
 **Evidência:**
 ![Screenshot da condição de corrida no encerramento Sockets](images/erro_socket_stopping.png)
-![Screenshot da condição de corrida no encerramento Shared_Memory](images/erro_sharedmemory_stopping.png)
+![Screenshot da condição de corrida no encerramento Shared_Memory](images/memory_shared_interruption.jpeg)
 
 ## 5. Recomendações e Próximos Passos
 
 Para corrigir os problemas encontrados e aumentar a robustez da aplicação, as seguintes ações são recomendadas:
 
 1.  **Para o problema P-01:** Implementar uma "flag" (bandeira) de controle na GUI. Quando o usuário clicar em "Parar", a flag é ativada. O código que exibe os logs brutos deve então verificar essa flag e, se ela estiver ativa, ignorar os erros de sistema esperados durante o encerramento manual.
-Status: ✅ Corrijido
+    Status: ✅ Corrijido
 
 2.  **Para o problema P-02:** Adicionar a opção de socket `SO_REUSEADDR` no script `backend/sockets/logic.py`. Esta opção deve ser configurada no socket do servidor antes da chamada `bind()`, instruindo o sistema operacional a permitir a reutilização imediata do endereço e da porta.
-Status: ✅ Corrijido
- 
-3.  **Para o problema P-03:** Implementar uma verificação de tamanho no backend `logic_sm.py`. Antes de escrever na memória, o script deve comparar o tamanho da mensagem com o tamanho do buffer. Se exceder, deve logar um erro informativo e encerrar graciosamente, evitando o crash.
-Status: ✅ Corrijido
+    Status: ✅ Corrijido
 
- 4.  **Para o problema P-04:** Modificar a função `stop_process` na GUI (`main_gui.py`). Após chamar `self.process.terminate()`, adicionar uma chamada a `self.process.wait(timeout=1.0)` para garantir que o processo tenha tempo de encerrar completamente antes da GUI continuar sua execução e reabilitar os botões.
-Status: ✅ Corrijido
+3.  **Para o problema P-03:** Implementar uma verificação de tamanho no backend `logic_sm.py`. Antes de escrever na memória, o script deve comparar o tamanho da mensagem com o tamanho do buffer. Se exceder, deve logar um erro informativo e encerrar graciosamente, evitando o crash.
+    Status: ✅ Corrijido
+
+4.  **Para o problema P-04:** Modificar a função `stop_process` na GUI (`main_gui.py`). Após chamar `self.process.terminate()`, adicionar uma chamada a `self.process.wait(timeout=1.0)` para garantir que o processo tenha tempo de encerrar completamente antes da GUI continuar sua execução e reabilitar os botões.
+    Status: ✅ Corrijido
