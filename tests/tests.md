@@ -2,10 +2,10 @@
 
 ## 1. Informações Gerais
 
-* **Data da Execução:** 07 e 08 de setembro de 2025
+* **Data da Execução:** 07, 08 e 09 de setembro de 2025
 * **Executor do Teste:** Eduardo Rodrigues Araújo de Oliveira, Ricardo Hey
 * **Ambiente de Teste:**
-    * **Sistema Operacional:** Linux (distribuição baseada em Ubuntu/Debian)
+    * **Sistema Operacional:** Linux (distribuição baseada em Ubuntu/Debian) e Windowns 11
     * **Versão do Python:** 3.13
     * **Hardware:** (Preencher com as especificações da máquina, se necessário)
 
@@ -72,10 +72,10 @@ Para corrigir os problemas encontrados e aumentar a robustez da aplicação, as 
 Status: ✅ Corrijido
 
 2.  **Para o problema P-02:** Adicionar a opção de socket `SO_REUSEADDR` no script `backend/sockets/logic.py`. Esta opção deve ser configurada no socket do servidor antes da chamada `bind()`, instruindo o sistema operacional a permitir a reutilização imediata do endereço e da porta.
-Status: Não Corrijdo
+Status: ✅ Corrijido
  
 3.  **Para o problema P-03:** Implementar uma verificação de tamanho no backend `logic_sm.py`. Antes de escrever na memória, o script deve comparar o tamanho da mensagem com o tamanho do buffer. Se exceder, deve logar um erro informativo e encerrar graciosamente, evitando o crash.
-Status: Nao Corrijido
+Status: ✅ Corrijido
 
  4.  **Para o problema P-04:** Modificar a função `stop_process` na GUI (`main_gui.py`). Após chamar `self.process.terminate()`, adicionar uma chamada a `self.process.wait(timeout=1.0)` para garantir que o processo tenha tempo de encerrar completamente antes da GUI continuar sua execução e reabilitar os botões.
-Status: Não Corrijido
+Status: ✅ Corrijido
