@@ -188,13 +188,33 @@ class App:
         self.stopping = True
         # Verifica se existe um processo e se ele ainda está rodando.
         if self.process and self.process.poll() is None:
-            # Envia um sinal para o processo terminar de forma "amigável".
-            self.process.terminate()
-            # Adiciona uma mensagem na área de log informando que o processo foi parado.
-            log_msg = {"source": "App", "payload": {"message": "Processo finalizado pelo usuário."}}
-            # Coloca a mensagem na fila de logs.
-            self.log_queue.put(json.dumps(log_msg) + '\n')
+            try:
+                # Envia um sinal para o processo terminar de forma "amigável".
+                self.process.terminate()
+                self.process.wait(timeout=1.0)
+            except subprocess.TimeoutExpired:
+                # Força o encerramento do processo caso demore mais que 1 segundo
+                self.process.kill()
+                self.process.wait()
+            # Checa se as threads de leitura do out e do error estão ativas e faz
+            # elas pararem
+            if self.stdout_thread and self.stdout_thread.is_alive():
+                self.stdout_thread.join(timeout=0.5)
+            if self.stderr_thread and self.stderr_thread.is_alive():
+                self.stderr_thread.join(timeout=0.5)
 
+            # Limpa qualquer log residual que possa ter sido capturado
+            # durante o processo de encerramento.
+            while not self.log_queue.empty():
+                try:
+                    self.log_queue.get_nowait()
+                except queue.Empty:
+                    break
+
+            self.process = None
+        # Adiciona uma mensagem na área de log informando que o processo foi parado.
+        log_msg = {"source": "App", "payload": {"message": "Processo finalizado pelo usuário."}}
+        self.log_queue.put(json.dumps(log_msg) + '\n')
         # Habilita o botão "Iniciar" novamente.
         self.start_button.config(state=tk.NORMAL)
         # Desabilita o botão "Parar".
