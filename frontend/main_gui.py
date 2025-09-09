@@ -28,7 +28,7 @@ class App:
         self.root = root  # Armazena a janela principal (root) na variável da classe.
         self.root.title("Visualizador de IPC Unificado")  # Define o título da janela.
         self.root.geometry("950x650")  # Define o tamanho inicial da janela.
-
+        self.stopping = False
         self.process = None  # Variável para armazenar o processo de backend em execução (começa como nulo).
         self.log_queue = queue.Queue()  # Cria uma fila para receber as mensagens de log do backend.
 
@@ -42,7 +42,6 @@ class App:
         # Define uma função a ser chamada quando o usuário clica no 'X' para fechar a janela.
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.is_terminating_manually = False  # Flag para indicar encerramento manual
-
 
     # Método para criar os componentes visuais (widgets) da interface.
     def _create_widgets(self):
@@ -134,8 +133,7 @@ class App:
     # Método chamado quando o botão "Iniciar" é clicado.
     def start_process(self):
         """Inicia o processo backend com base nas seleções do usuário."""
-        
-        self.is_terminating_manually = False 
+        self.stopping = False
 
         # Limpa o conteúdo das duas áreas de log.
         self.log_area_1.delete('1.0', tk.END)
@@ -186,9 +184,9 @@ class App:
     # Método chamado quando o botão "Parar" é clicado.
     def stop_process(self):
         """Para o processo backend em execução."""
+        self.stopping = True
         # Verifica se existe um processo e se ele ainda está rodando.
         if self.process and self.process.poll() is None:
-            self.is_terminating_manually = True
             # Envia um sinal para o processo terminar de forma "amigável".
             self.process.terminate()
             # Adiciona uma mensagem na área de log informando que o processo foi parado.
@@ -261,7 +259,7 @@ class App:
                 # Se a linha não for um JSON válido, um erro ocorrerá.
                 except json.JSONDecodeError:
                     # Neste caso, apenas exibe a linha como texto bruto na primeira área.
-                    if not self.is_terminating_manually:
+                    if not self.stopping:
                         self.log_area_1.insert(tk.END, f"[LOG BRUTO]: {line}")
         # Se a fila estiver vazia, o 'get_nowait' gera este erro.
         except queue.Empty:
