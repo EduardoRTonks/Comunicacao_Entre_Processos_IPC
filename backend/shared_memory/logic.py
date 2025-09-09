@@ -25,22 +25,29 @@ def processo_escritor(shared_mem, sync_event, msg):
     log_message(source_id, "Iniciado.")
     # Adiciona uma pausa para visualização.
     time.sleep(1)
-    
+
     # Codifica a mensagem (string) para bytes, no formato utf-8.
     msg_bytes = msg.encode('utf-8')
-    # Loga a mensagem que será escrita na memória.
+
+    # Verifica se a mensagem codificada cabe no buffer de memória compartilhada.
+    buffer_size = len(shared_mem)
+    if len(msg_bytes) >= buffer_size:
+        log_message(source_id,
+                    f"ERRO: A mensagem ({len(msg_bytes)} bytes) excede o tamanho do buffer ({buffer_size} bytes).")
+        log_message(source_id, "Processo encerrado devido a erro.")
+        # Ativa o evento mesmo em caso de erro para que o processo leitor não fique esperando para sempre.
+        sync_event.set()
+        return  # Encerra a função e o processo de forma limpa, evitando o crash.
+
     log_message(source_id, f"PID: {pid} -> Escrevendo '{msg}' na memória compartilhada.")
-    
+
     # Escreve os bytes da mensagem na memória compartilhada.
-    # O slice [:] garante que estamos modificando o conteúdo do array.
     shared_mem[:len(msg_bytes)] = msg_bytes
-    
-    # Adiciona uma pausa.
+
     time.sleep(1)
-    # Loga que vai sinalizar ao outro processo que a escrita terminou.
     log_message(source_id, f"PID: {pid} -> Escrita finalizada. Sinalizando o processo leitor.")
-    # Ativa o evento. Isso vai "acordar" o processo leitor que está esperando.
     sync_event.set()
+
 
 # Função que define o comportamento do processo que lê da memória.
 def processo_leitor(shared_mem, sync_event):
@@ -53,18 +60,21 @@ def processo_leitor(shared_mem, sync_event):
     log_message(source_id, f"PID: {pid} -> Iniciado. Aguardando sinal do escritor...")
     # Fica bloqueado aqui até que o evento 'sync_event' seja ativado pelo escritor.
     sync_event.wait()
-    
-    # Loga que o sinal foi recebido e que vai ler a memória.
-    log_message(source_id, "PID: {pid} -> Sinal recebido! Lendo da memória compartilhada.")
-    
-    # Lê os bytes da memória compartilhada e os decodifica de volta para uma string.
-    # O '.rstrip(b'\\x00')' remove os bytes nulos do final.
-    mensagem_lida = shared_mem[:].rstrip(b'\x00').decode('utf-8')
-    
-    # Loga a mensagem que foi lida.
-    log_message(source_id, f"PID: {pid} -> Leu da memória: '{mensagem_lida}'")
-    # Loga que o processo está encerrando.
+
+    # Lê os bytes da memória compartilhada. Se a mensagem for vazia (caso de erro no escritor), não vai ler nada.
+    mensagem_lida_bytes = shared_mem[:].rstrip(b'\x00')
+
+    # Só processa se alguma mensagem foi de fato escrita.
+    if mensagem_lida_bytes:
+        log_message(source_id, f"PID: {pid} -> Sinal recebido! Lendo da memória compartilhada.")
+        mensagem_lida = mensagem_lida_bytes.decode('utf-8')
+        log_message(source_id, f"PID: {pid} -> Leu da memória: '{mensagem_lida}'")
+    else:
+        # O escritor sinalizou, mas não escreveu nada (provavelmente por causa do erro de tamanho).
+        log_message(source_id, "Sinal recebido, mas sem mensagem para ler. Provavelmente o escritor encontrou um erro.")
+
     log_message(source_id, f"PID: {pid} -> Encerrando.")
+
 
 # Ponto de entrada do script.
 if __name__ == "__main__":
@@ -73,8 +83,7 @@ if __name__ == "__main__":
 
     # Cria um 'Evento', um objeto de sincronização simples. Começa "desativado".
     evento = mp.Event()
-    # Cria um 'Array' de memória compartilhada. 'c' significa 'char' (caractere/byte).
-    # 1024 é o tamanho do buffer em bytes.
+    # Cria um 'Array' de memória compartilhada de 1024 bytes.
     memoria_compartilhada = mp.Array('c', 1024)
 
     # Cria o processo escritor, passando a memória, o evento e a mensagem.

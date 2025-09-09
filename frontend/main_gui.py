@@ -73,7 +73,7 @@ class App:
             # Posiciona o botão de rádio à esquerda do anterior.
             rb.pack(side=tk.LEFT, padx=5)
 
-        # 2. Caixa de Texto para a Mensagem
+        #Caixa de Texto para a Mensagem
         # Cria um frame para a entrada de mensagem.
         message_frame = ttk.Frame(controls_frame)
         # Posiciona o frame na tela.
@@ -87,7 +87,7 @@ class App:
         # Insere um texto padrão no campo de entrada.
         self.message_entry.insert(0, "Olá, mundo do IPC!")
 
-        # 3. Botões de Ação
+        # Botões de Ação
         # Cria um frame para os botões de ação.
         button_frame = ttk.Frame(controls_frame)
         # Posiciona o frame na tela.
@@ -171,10 +171,11 @@ class App:
             encoding='utf-8'  # Define a codificação do texto como UTF-8.
         )
 
-        # Cria e inicia uma nova thread para ler a saída do processo sem travar a GUI.
-        threading.Thread(target=self.read_output, args=(self.process.stdout,), daemon=True).start()
-        # Cria e inicia outra thread para ler a saída de erro.
-        threading.Thread(target=self.read_output, args=(self.process.stderr,), daemon=True).start()
+        # Cria e Armazena as threads para que possam ser gerenciadas ao parar o processo
+        self.stdout_thread = threading.Thread(target=self.read_output, args=(self.process.stdout,), daemon=True)
+        self.stderr_thread = threading.Thread(target=self.read_output, args=(self.process.stderr,), daemon=True)
+        self.stdout_thread.start()
+        self.stderr_thread.start()
 
         # Desabilita o botão "Iniciar" para evitar múltiplos cliques.
         self.start_button.config(state=tk.DISABLED)
@@ -183,7 +184,7 @@ class App:
 
     # Método chamado quando o botão "Parar" é clicado.
     def stop_process(self):
-        """Para o processo backend em execução."""
+        """Para o processo backend e suas threads de log de forma síncrona e segura."""
         self.stopping = True
         # Verifica se existe um processo e se ele ainda está rodando.
         if self.process and self.process.poll() is None:

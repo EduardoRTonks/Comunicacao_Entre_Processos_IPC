@@ -33,6 +33,7 @@ def processo_servidor():
 
     # Cria um objeto socket. AF_INET é para IPv4, SOCK_STREAM é para TCP.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # Adiciona esta opção para permitir que o endereço seja reutilizado imediatamente.
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # Associa o socket ao endereço (host) e à porta definidos.
         s.bind((HOST, PORT))
@@ -65,6 +66,7 @@ def processo_servidor():
             
     # Loga que o servidor está encerrando.
     log_message(source_id, f"PID: {pid} -> Encerrado.")
+
 
 # Função que define o comportamento do processo Cliente.
 def processo_cliente(msg):
